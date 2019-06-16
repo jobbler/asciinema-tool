@@ -3,6 +3,7 @@
 import os
 import sys
 import argparse
+from csv import reader
 
 fuzzy = 'soft'
 selection_type = 'time'
@@ -59,9 +60,8 @@ parser.add_argument( "--frame"
         , action = "store_const"
         , help = "If set, use frame numbers instead of time when specifying start and stop"
         )
-parser.add_argument( "--cast"
+parser.add_argument( "cast"
         , type = file 
-        , required = True
         , help = "The cast file to process."
         )
 
@@ -72,25 +72,69 @@ cli = parser.parse_args()
 ## Functions
 #
 
+# def test(castdata):
+#     for line in castdata:
+#         if line.startswith('{'):
+#             sys.stdout.write( line )
+#         else:
+# 
+#             sep1 = line.find(',')
+#             sep2 = line.find(',', sep1+1)
+# 
+#             sbloc = line.find('[')
+#             ebloc = line.rfind(']')
+# 
+#             ts = float( line[sbloc+1:sep1])
+#             parameter = line[sep1+1:sep2]
+#             data = line[sep2+1:ebloc]
+# 
+#             sys.stdout.write ("{0:f}---{1:s}---{2:s}\n".format(ts, parameter, data) )
+
+
+
+def frame_parse(frame):
+    sep1 = frame.find(',')
+    sep2 = frame.find(',', sep1+1)
+
+    sbloc = frame.find('[')
+    ebloc = frame.rfind(']')
+
+    ts = float( frame[sbloc+1:sep1])
+    parameter = frame[sep1+1:sep2]
+    data = frame[sep2+1:ebloc]
+
+    return ts, parameter, data
+
+
+def test(castdata):
+    for line in castdata:
+        if line.startswith('{'):
+            sys.stdout.write( line )
+        else:
+            ts, parameter, data = frame_parse(line)
+            sys.stdout.write ("{0:f}---{1:s}---{2:s}\n".format(ts, parameter, data) )
+
+
+
 def deltas_print(castdata):
     frame = 0
 
     sys.stdout.write ( "{0:>8s} --- {1:>12s} --- {2:<12s} --- {3:<s}\n".format('Frame', 'Delta', 'Time Stamp', 'String') )
 
     for line in castdata:
-
-        if line.startswith('['):
-            data = line.split(",")
-            ts = data[0][1:]
+        if line.startswith('{'):
+            sys.stdout.write( line )
+        else:
+            ts, parameter, data = frame_parse(line)
 
             try:
                 ts_prev
             except NameError:
                 ts_prev = ts
 
-            delta = float(ts) - float(ts_prev)
+            delta = ts - ts_prev
 
-            sys.stdout.write ( "{0:>8d} --- {1:>12f} --- {2:<12s} --- {3:<s}".format(frame, delta, ts, data[2]) )
+            sys.stdout.write ( "{0:>8d} --- {1:>12f} --- {2:<12f} --- {3:<s}\n".format(frame, delta, ts, data) )
 
             ts_prev = ts
 
@@ -113,10 +157,8 @@ def deltas_change(castdata, dtype, fuzzy, delta, start, stop):
     for line in castdata:
         if line.startswith('{'):
             sys.stdout.write( line )
-
-        if line.startswith('['):
-            data = line.split(",")
-            ts_file = float(data[0][1:])
+        elif line.startswith('['):
+            ts_file, parameter, data = frame_parse(line)
 
             try:
                 ts_file_prev
@@ -143,7 +185,7 @@ def deltas_change(castdata, dtype, fuzzy, delta, start, stop):
                 ts_new = ts_new_prev + ts_delta
 
 
-            sys.stdout.write ( "[{0:f}, {1:s}, {2:s}".format(ts_new, data[1], data[2]) )
+            sys.stdout.write ( "[{0:f}, {1:s}, {2:s}]\n".format(ts_new, parameter, data) )
 
             ts_file_prev = ts_file
             ts_new_prev = ts_new
@@ -163,30 +205,28 @@ def add_delay(castdata, dtype, delay, point):
     for line in castdata:
         if line.startswith('{'):
             sys.stdout.write( line )
-
-        if line.startswith('['):
-            data = line.split(",")
-            ts_file = float(data[0][1:])
+        elif line.startswith('['):
+            ts_file, parameter, data = frame_parse(line)
 
             try:
                 inserted
             except NameError:
                 if dtype == "time" and ts_file >= point:
                     delay_temp = delay
-                    sys.stdout.write ( "[{0:>f}, \"o\", \"\"]\n".format(delay) )
+#                    sys.stdout.write ( "[{0:>f}, \"o\", \"\"]\n".format(delay) )
                     
                     inserted = "true"
                     
                 if dtype == "frame" and frame >= point:
                     delay_temp = delay
-                    sys.stdout.write ( "[{0:>f}, \"o\", \"\"]\n".format(delay) )
+#                    sys.stdout.write ( "[{0:>f}, \"o\", \"\"]\n".format(delay) )
                     
                     inserted = "true"
                     
 
             ts_new = ts_file + delay_temp
 
-            sys.stdout.write ( "[{0:f}, {1:s}, {2:s}".format(ts_new, data[1], data[2]) )
+            sys.stdout.write ( "[{0:f}, {1:s}, {2:s}\n".format(ts_new, parameter, data) )
 
         frame += 1
 
@@ -202,35 +242,35 @@ def frames_cut(castdata, dtype, start, stop):
     for line in castdata:
         if line.startswith('{'):
             sys.stdout.write( line )
-
-        if line.startswith('['):
-            data = line.split(",")
-            ts_file = float(data[0][1:])
+        elif line.startswith('['):
+            ts_file, parameter, data = frame_parse(line)
 
 
             if ( dtype == "time" and ts_file < start ) or ( dtype == "frame" and frame < start ):
                 ts_new = ts_file
-                sys.stdout.write ( "[{0:f}, {1:s}, {2:s}".format(ts_new, data[1], data[2]) )
+                sys.stdout.write ( "[{0:f}, {1:s}, {2:s}\n".format(ts_new, parameter, data) )
             else:
                 try:
                     ts_start
                 except NameError:
                     ts_start = ts_file
 
-            if ( dtype == "time" and ts_file >= stop ) or ( dtype == "frame" and frame >= stop ):
+            if ( dtype == "time" and ts_file > stop ) or ( dtype == "frame" and frame > stop ):
                 try:
                     ts_delta
                 except NameError:
                     ts_delta = ts_file - ts_start
 
                 ts_new = ts_file - ts_delta
-                sys.stdout.write ( "[{0:f}, {1:s}, {2:s}".format(ts_new, data[1], data[2]) )
+                sys.stdout.write ( "[{0:f}, {1:s}, {2:s}\n".format(ts_new, parameter, data) )
 
         frame += 1
 
 
 
 def main():
+#    test(cli.cast)
+
     if cli.add_delay:
         add_delay(cli.cast, cli.selection_type, cli.add_delay[0], cli.add_delay[1])
 

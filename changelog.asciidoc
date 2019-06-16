@@ -1,0 +1,10 @@
+
+
+## 2019-06-16
+### - Fixed
+ - Original script would split commas in data field.
+   Changed using split function on commas. Now finds first
+   and second comma from left to determine fields.
+
+### - Added
+ - Added a test script to automate testing of script
