@@ -61,7 +61,7 @@ parser.add_argument( "--frame"
         , help = "If set, use frame numbers instead of time when specifying start and stop"
         )
 parser.add_argument( "cast"
-        , type = file 
+        , type = argparse.FileType('r') 
         , help = "The cast file to process."
         )
 
@@ -226,7 +226,7 @@ def add_delay(castdata, dtype, delay, point):
 
             ts_new = ts_file + delay_temp
 
-            sys.stdout.write ( "[{0:f}, {1:s}, {2:s}\n".format(ts_new, parameter, data) )
+            sys.stdout.write ( "[{0:f}, {1:s}, {2:s}]\n".format(ts_new, parameter, data) )
 
         frame += 1
 
@@ -248,7 +248,7 @@ def frames_cut(castdata, dtype, start, stop):
 
             if ( dtype == "time" and ts_file < start ) or ( dtype == "frame" and frame < start ):
                 ts_new = ts_file
-                sys.stdout.write ( "[{0:f}, {1:s}, {2:s}\n".format(ts_new, parameter, data) )
+                sys.stdout.write ( "[{0:f}, {1:s}, {2:s}]\n".format(ts_new, parameter, data) )
             else:
                 try:
                     ts_start
@@ -262,7 +262,7 @@ def frames_cut(castdata, dtype, start, stop):
                     ts_delta = ts_file - ts_start
 
                 ts_new = ts_file - ts_delta
-                sys.stdout.write ( "[{0:f}, {1:s}, {2:s}\n".format(ts_new, parameter, data) )
+                sys.stdout.write ( "[{0:f}, {1:s}, {2:s}]\n".format(ts_new, parameter, data) )
 
         frame += 1
 

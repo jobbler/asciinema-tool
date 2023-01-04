@@ -2,7 +2,7 @@
 
 This python script allows you to manipulate asciinema cast files.
 
-It takes and imput cast file, manipulates it and sends the output to stdout.
+It takes and input cast file, manipulates it and sends the output to stdout.
 
 Currently the script provides only four functions:
 
@@ -15,11 +15,66 @@ Cut frames from the cast.
 Change the deltas between a set of frames.
 
 
+Future functions
+speed up or slowdown entire cast by x times. ( 2x, 3x .5x )
+Clean the 'exit' from a cast.
+Join casts.
 
 
-=== Printing Deltas between frames
+=== Usage
 
-Printing deltas between the frames allso prints the frame numbers.
+The script is called with one of the actions and the input cast file.
+Only one action can be specified per invocation of the script.
+The output of the script is written to standard out (stdout).
+----
+./asciinema-tool.py --print tool-test.cast
+----
+
+==== --frame
+This is not an action and is optional.
+This option changes how the start, stop, and delay points are specified on the command line.
+By default all point specifications are made using time, this option changes to using frame numbers as the specifications.
+
+==== --nofuzzy
+This is not an action and is optional.
+This option changes the behavior of the --change action.
+See the --change action on how this affects it operation.
+
+==== --help
+This action prints the usage for the script.
+----
+usage: asciinema-tool.py [-h]
+                         [--print | --change delta start stop | --cut start stop | --add-delay delay point]
+                         [--nofuzzy] [--frame]
+                         cast
+
+This program can manipulate asciinema cast files. The modified cast file will
+be output to stdout.
+
+positional arguments:
+  cast                  The cast file to process.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --nofuzzy             If set, all frames between the start and stop points
+                        will be set to delta. Otherwise, only the matching
+                        frames between the start and stop points that exceed
+                        the delta will be set to delta
+  --frame               If set, use frame numbers instead of time when
+                        specifying start and stop
+
+Actions:
+  --print               Print the frame numbers and deltas between frames
+  --change delta start stop
+                        Change the deltas of frames between start and stop
+  --cut start stop      Remove the frames between start and stop
+  --add-delay delay point
+                        Add a delay at point
+
+----
+
+==== --print
+Prints the frame numbers and the deltas between the frames.
 
 ---
 $ ./asciinema-tool.py --print tool-test.cast
@@ -35,17 +90,72 @@ $ ./asciinema-tool.py --print tool-test.cast
        9 ---     0.214048 --- 3.355261     ---  "h"
 ---
 
+==== --add-delay delay point
+Adds a delay at some point in the cast.
+By default it uses a timestamp to place the delay.
 
-=== Adding a Delay
+Adds a 10 second delay at timestamp 2.1
+----
+$ ./asciinema-tool.py --add-delay 10 2.1 tool-test.cast
+{"version": 2, "width": 95, "height": 55, "timestamp": 1559507892, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.105404,  "o",  " 1 $ "]
+[1.687147,  "o",  " 2 e"]
+[1.918011,  "o",  " 3 c"]
+[12.132028,  "o",  " 4 h"]
+[12.334248,  "o",  " 5 o"]
+[12.380839,  "o",  " 6  "]
+----
 
-Delays are added
+Adds a 10 second delay before frame 4
+----
+$ ./asciinema-tool.py --add-delay 10 4 --frame tool-test.cast
+{"version": 2, "width": 95, "height": 55, "timestamp": 1559507892, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.105404,  "o",  " 1 $ "]
+[1.687147,  "o",  " 2 e"]
+[1.918011,  "o",  " 3 c"]
+[12.132028,  "o",  " 4 h"]
+[12.334248,  "o",  " 5 o"]
+[12.380839,  "o",  " 6  "]
+----
+
+==== --cut start stop
+Cuts the frames specified by start and stop, including the start and stop frames.
+By default, start and stop are specified by time.
+This behavior can be altered by specifying the --frame option.
+All the time stamps after the cut frames are lowered by the about of time removed.
+
+Cutting frames by specifing time stamps
+----
+$ ./asciinema-tool.py --cut 2.3 5 tool-test.cast
+{"version": 2, "width": 95, "height": 55, "timestamp": 1559507892, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.105404,  "o",  " 1 $ "]
+[1.687147,  "o",  " 2 e"]
+[1.918011,  "o",  " 3 c"]
+[2.132028,  "o",  " 4 h"]
+[2.334248,  "o",  "19 e"]
+[2.579209,  "o",  "20 s"]
+[2.716178,  "o",  "21 t"]
+[2.926952,  "o",  "22  "]
+----
+
+Cutting frames by specifing frame numbers
+----
+$ ./asciinema-tool.py --cut 5 18 --frame tool-test.cast
+{"version": 2, "width": 95, "height": 55, "timestamp": 1559507892, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.105404,  "o",  " 1 $ "]
+[1.687147,  "o",  " 2 e"]
+[1.918011,  "o",  " 3 c"]
+[2.132028,  "o",  " 4 h"]
+[2.334248,  "o",  "19 e"]
+[2.579209,  "o",  "20 s"]
+[2.716178,  "o",  "21 t"]
+[2.926952,  "o",  "22  "]
+----
+
+==== --change delta start stop
+
+Normally the change option will change any delta between start and stop that are greater than delta to delta. This is considered fuzzy changes.
+Specifying the --nofuzzy option changes this behavior by changing all deltas between start and stop to delta.
 
 
-=== Cutting frames
 
-
-=== Changing the Deltas between frames
-
-
-
-Selecting the frames can be done by specifying either the timestamp or the frame number.
