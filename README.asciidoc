@@ -76,7 +76,7 @@ Actions:
 ==== --print
 Prints the frame numbers and the deltas between the frames.
 
----
+```
 $ ./asciinema-tool.py --print tool-test.cast
    Frame ---        Delta --- Time Stamp   --- String
        1 ---     0.000000 --- 0.105404     ---  "$ "
@@ -88,7 +88,7 @@ $ ./asciinema-tool.py --print tool-test.cast
        7 ---     0.318406 --- 2.699245     ---  "\""
        8 ---     0.441968 --- 3.141213     ---  "T"
        9 ---     0.214048 --- 3.355261     ---  "h"
----
+```
 
 ==== --add-delay delay point
 Adds a delay at some point in the cast.
